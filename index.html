@@ -2,88 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>YouTube Sports Dashboard & Overlay Ticker</title>
+  <title>Sports Dashboard Ticker</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: #000; color: #fff; font-family: system-ui, sans-serif; overflow: hidden; }
 
-    body {
-      background-color: #000;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
+    .app-viewport { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
-    .app-viewport {
+    /* Top Control & Nav Bar */
+    .top-bar {
+      height: 50px;
+      background: #0f172a;
       display: flex;
-      flex-direction: column;
-      height: 100vh;
-      width: 100vw;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid #334155;
     }
 
-    /* Embedded YouTube Player Viewport */
-    .viewer-frame {
-      flex: 1;
-      width: 100%;
-      border: none;
-      background: #000;
-    }
+    .nav-links { display: flex; gap: 12px; }
 
-    /* Top Control Bar */
-    .top-controls {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      z-index: 100;
-      display: flex;
-      gap: 8px;
-      background: rgba(15, 23, 42, 0.85);
-      padding: 8px 12px;
-      border-radius: 8px;
-      backdrop-filter: blur(6px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .top-controls input {
+    .nav-btn {
       background: #1e293b;
-      border: 1px solid #475569;
       color: #fff;
-      padding: 6px 10px;
+      border: 1px solid #475569;
+      padding: 6px 14px;
       border-radius: 4px;
+      font-weight: 600;
+      text-decoration: none;
       font-size: 13px;
-      width: 260px;
-    }
-
-    .ctrl-btn {
-      background: #aa0000;
-      color: #ffffff;
-      border: none;
-      padding: 6px 12px;
-      font-weight: 700;
-      font-size: 13px;
-      border-radius: 4px;
       cursor: pointer;
     }
 
-    .ctrl-btn.secondary {
-      background: #1e293b;
-      border: 1px solid #475569;
+    .nav-btn.directv {
+      background: #00A8E8;
+      border-color: #00A8E8;
+      color: #000;
+      font-weight: 800;
     }
 
-    /* Bottom Ticker Bar */
+    /* Video Frame Container */
+    .viewer-frame { flex: 1; width: 100%; border: none; background: #000; }
+
+    /* Ticker Styling */
     .ticker-wrapper {
-      height: 75px;
+      height: 70px;
       width: 100%;
       background: rgba(15, 23, 42, 0.95);
-      color: #ffffff;
-      line-height: 75px;
+      line-height: 70px;
       overflow: hidden;
       border-top: 4px solid #aa0000;
-      box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
-      z-index: 10;
-      cursor: pointer;
     }
 
     .ticker-content {
@@ -94,171 +62,64 @@
       animation: scroll-ticker 55s linear infinite;
     }
 
-    .ticker-item {
-      display: inline-flex;
-      align-items: center;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      font-size: 24px;
-      padding: 0 16px;
-    }
+    .ticker-item { display: inline-flex; align-items: center; font-weight: 800; font-size: 22px; padding: 0 16px; }
 
-    /* 49ers Highlight Box */
-    .ticker-item.niners-game {
-      background: rgba(170, 0, 0, 0.45);
-      border: 2px solid #B3995D;
-      border-radius: 8px;
-      padding: 4px 20px;
-      margin: 0 10px;
-    }
+    /* Highlights */
+    .niners-game { background: rgba(170, 0, 0, 0.45); border: 2px solid #B3995D; border-radius: 6px; margin: 0 8px; }
+    .phillies-game { background: rgba(231, 15, 60, 0.35); border: 2px solid #E70F3C; border-radius: 6px; margin: 0 8px; }
+    .blues-game { background: rgba(0, 47, 108, 0.55); border: 2px solid #FCB514; border-radius: 6px; margin: 0 8px; }
 
-    /* Philadelphia Phillies Highlight Box */
-    .ticker-item.phillies-game {
-      background: rgba(231, 15, 60, 0.35);
-      border: 2px solid #E70F3C;
-      border-radius: 8px;
-      padding: 4px 20px;
-      margin: 0 10px;
-    }
+    .team-logo { height: 36px; width: 36px; margin: 0 8px; vertical-align: middle; }
+    .league-tag { color: #94a3b8; font-size: 16px; margin-right: 8px; }
+    .vs-text { color: #cbd5e1; margin: 0 6px; }
+    .game-status { color: #38bdf8; font-size: 16px; margin-left: 10px; }
 
-    /* St. Louis Blues Highlight Box */
-    .ticker-item.blues-game {
-      background: rgba(0, 47, 108, 0.55);
-      border: 2px solid #FCB514;
-      border-radius: 8px;
-      padding: 4px 20px;
-      margin: 0 10px;
-    }
-
-    /* NFL News Highlight Box */
-    .ticker-item.nfl-news {
-      background: rgba(30, 41, 59, 0.8);
-      border-left: 4px solid #aa0000;
-      padding: 4px 16px;
-      margin: 0 8px;
-    }
-
-    .team-logo {
-      height: 40px;
-      width: 40px;
-      object-fit: contain;
-      vertical-align: middle;
-      margin: 0 8px;
-    }
-
-    .league-tag {
-      color: #94a3b8;
-      font-size: 18px;
-      font-weight: 800;
-      margin-right: 10px;
-    }
-
-    .news-tag {
-      color: #ef4444;
-      font-size: 18px;
-      font-weight: 800;
-      margin-right: 10px;
-    }
-
-    .vs-text {
-      color: #cbd5e1;
-      font-weight: 500;
-      margin: 0 8px;
-    }
-
-    .game-status {
-      color: #38bdf8;
-      font-weight: 600;
-      font-size: 18px;
-      margin-left: 12px;
-    }
-
-    .news-text {
-      color: #f8fafc;
-      font-weight: 600;
-      font-size: 20px;
-    }
-
-    @keyframes scroll-ticker {
-      0% { transform: translate3d(0, 0, 0); }
-      100% { transform: translate3d(-100%, 0, 0); }
-    }
+    @keyframes scroll-ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
   </style>
 </head>
 <body>
 
-  <!-- Controls overlay -->
-  <div class="top-controls">
-    <input type="text" id="ytUrlInput" placeholder="Paste YouTube Video / Live URL...">
-    <button class="ctrl-btn" onclick="loadCustomUrl()">Load Stream</button>
-    <button class="ctrl-btn secondary" onclick="toggleFullscreen()">Fullscreen</button>
-  </div>
-
   <div class="app-viewport">
-    <!-- Embedded YouTube Player Endpoint -->
-    <iframe 
-      id="mainFrame" 
-      class="viewer-frame" 
-      src="https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig" 
-      allow="fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowfullscreen>
-    </iframe>
+    <div class="top-bar">
+      <div class="nav-links">
+        <a href="https://stream.directv.com" target="_blank" class="nav-btn directv">Launch DIRECTV Stream ↗</a>
+        <button class="nav-btn" onclick="loadStream('https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig')">YouTube Stream</button>
+      </div>
+    </div>
 
-    <!-- Scrolling Sports Ticker Bar -->
-    <div class="ticker-wrapper" onclick="toggleFullscreen()">
-      <div class="ticker-content" id="ticker">Loading live sports scores & NFL news...</div>
+    <!-- Media Player -->
+    <iframe id="mainFrame" class="viewer-frame" src="https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig" allowfullscreen></iframe>
+
+    <!-- Live Ticker -->
+    <div class="ticker-wrapper">
+      <div class="ticker-content" id="ticker">Loading live sports scores...</div>
     </div>
   </div>
 
   <script>
-    function loadCustomUrl() {
-      const input = document.getElementById('ytUrlInput').value.trim();
-      if (!input) return;
-
-      let videoId = input;
-
-      if (input.includes('v=')) {
-        videoId = input.split('v=')[1].split('&')[0];
-      } else if (input.includes('youtu.be/')) {
-        videoId = input.split('youtu.be/')[1].split('?')[0];
-      } else if (input.includes('embed/')) {
-        videoId = input.split('embed/')[1].split('?')[0];
-      }
-      
-      document.getElementById('mainFrame').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    function loadStream(url) {
+      document.getElementById('mainFrame').src = url;
     }
 
-    // Live Scores & News Endpoints
-    const SCORE_ENDPOINTS = [
+    const ENDPOINTS = [
       'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
-      'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-      'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'
+      'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'
     ];
 
-    const NFL_NEWS_ENDPOINT = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/news';
-
-    async function fetchAllData() {
+    async function fetchScores() {
       const tickerEl = document.getElementById('ticker');
       try {
-        const scorePromises = SCORE_ENDPOINTS.map(url => 
-          fetch(url).then(res => res.ok ? res.json() : null).catch(() => null)
-        );
-        const newsPromise = fetch(NFL_NEWS_ENDPOINT).then(res => res.ok ? res.json() : null).catch(() => null);
+        const promises = ENDPOINTS.map(u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null));
+        const data = await Promise.all(promises);
 
-        const [scoreResults, newsData] = await Promise.all([
-          Promise.all(scorePromises),
-          newsPromise
-        ]);
+        let priority = [], standard = [];
 
-        let priorityItems = [], standardItems = [], newsItems = [];
+        data.forEach(d => {
+          if (!d || !d.events) return;
+          const league = d.leagues?.[0]?.abbreviation || 'SPORTS';
 
-        // Parse Live Scores
-        scoreResults.forEach(data => {
-          if (!data || !data.events) return;
-          const league = data.leagues?.[0]?.abbreviation || 'SPORTS';
-
-          data.events.forEach(event => {
+          d.events.forEach(event => {
             const comp = event.competitions?.[0];
             if (!comp) return;
 
@@ -267,70 +128,42 @@
             const status = event.status?.type?.shortDetail || 'Scheduled';
 
             if (home && away) {
-              const homeScore = home.score !== undefined ? home.score : 0;
-              const awayScore = away.score !== undefined ? away.score : 0;
-              const homeLogo = home.team?.logo || '';
-              const awayLogo = away.team?.logo || '';
-              
               const isNiners = (home.team?.abbreviation === 'SF' || away.team?.abbreviation === 'SF') && league === 'NFL';
               const isPhillies = (home.team?.abbreviation === 'PHI' || away.team?.abbreviation === 'PHI') && league === 'MLB';
               const isBlues = (home.team?.abbreviation === 'STL' || away.team?.abbreviation === 'STL') && league === 'NHL';
 
-              let highlightClass = '';
-              if (isNiners) highlightClass = 'niners-game';
-              if (isPhillies) highlightClass = 'phillies-game';
-              if (isBlues) highlightClass = 'blues-game';
+              let cls = '';
+              if (isNiners) cls = 'niners-game';
+              if (isPhillies) cls = 'phillies-game';
+              if (isBlues) cls = 'blues-game';
 
-              const itemHTML = `
-                <span class="ticker-item ${highlightClass}">
+              const html = `
+                <span class="ticker-item ${cls}">
                   <span class="league-tag">[${league}]</span>
-                  ${awayLogo ? `<img src="${awayLogo}" class="team-logo">` : ''}
-                  ${away.team.abbreviation} ${awayScore}
+                  ${away.team?.logo ? `<img src="${away.team.logo}" class="team-logo">` : ''}
+                  ${away.team.abbreviation} ${away.score || 0}
                   <span class="vs-text">@</span>
-                  ${homeLogo ? `<img src="${homeLogo}" class="team-logo">` : ''}
-                  ${home.team.abbreviation} ${homeScore}
+                  ${home.team?.logo ? `<img src="${home.team.logo}" class="team-logo">` : ''}
+                  ${home.team.abbreviation} ${home.score || 0}
                   <span class="game-status">(${status})</span>
                 </span>
               `;
 
-              if (isNiners || isPhillies || isBlues) priorityItems.push(itemHTML);
-              else standardItems.push(itemHTML);
+              if (isNiners || isPhillies || isBlues) priority.push(html);
+              else standard.push(html);
             }
           });
         });
 
-        // Parse NFL News Headlines
-        if (newsData && newsData.articles) {
-          newsData.articles.slice(0, 8).forEach(article => {
-            if (article.headline) {
-              newsItems.push(`
-                <span class="ticker-item nfl-news">
-                  <span class="news-tag">[NFL HEADLINES]</span>
-                  <span class="news-text">${article.headline}</span>
-                </span>
-              `);
-            }
-          });
-        }
-
-        // Priority order: Team Highlights -> Standard Scores -> NFL News
-        const allItems = [...priorityItems, ...standardItems, ...newsItems];
-        tickerEl.innerHTML = allItems.length > 0 ? allItems.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ') : 'No sports updates available right now.';
-      } catch (err) {
-        tickerEl.innerText = 'Unable to connect to live sports feed.';
+        const all = [...priority, ...standard];
+        tickerEl.innerHTML = all.length ? all.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ') : 'No live scores available.';
+      } catch (e) {
+        tickerEl.innerText = 'Unable to load live scores.';
       }
     }
 
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
-    }
-
-    fetchAllData();
-    setInterval(fetchAllData, 60000);
+    fetchScores();
+    setInterval(fetchScores, 60000);
   </script>
 </body>
 </html>
