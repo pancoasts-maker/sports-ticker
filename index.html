@@ -2,72 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Live Sports YouTube & Overlay Ticker</title>
+  <title>YouTube TV + Scores Overlay</title>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background-color: #000000;
+      background: #000;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    /* YouTube Container takes full height minus ticker */
-    .video-container {
-      position: absolute;
-      top: 0;
-      left: 0;
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
       width: 100vw;
-      height: calc(100vh - 80px);
-      background: #000;
     }
 
-    iframe {
+    /* Main view area for YouTube TV */
+    .stream-frame {
+      flex: 1;
       width: 100%;
-      height: 100%;
       border: none;
     }
 
-    /* Floating input bar to change YouTube Video/Live Stream ID or URL */
-    .controls-overlay {
+    /* Floating Quick Links to Sunday Ticket / YouTube TV */
+    .nav-bar {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 20;
-      background: rgba(0, 0, 0, 0.75);
-      padding: 8px 12px;
-      border-radius: 6px;
+      top: 12px;
+      right: 12px;
+      z-index: 100;
       display: flex;
-      gap: 8px;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 8px 14px;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
     }
 
-    .controls-overlay input {
+    .nav-btn {
+      background: #aa0000;
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .nav-btn.secondary {
       background: #1e293b;
       border: 1px solid #475569;
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      width: 240px;
     }
 
-    .controls-overlay button {
-      background: #aa0000;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    /* Bottom Ticker Bar */
+    /* Bottom Ticker */
     .ticker-wrapper {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
       height: 80px;
+      width: 100%;
       background: rgba(15, 23, 42, 0.95);
       color: #ffffff;
       line-height: 80px;
@@ -75,7 +70,6 @@
       border-top: 4px solid #aa0000;
       box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
       z-index: 10;
-      cursor: pointer;
     }
 
     .ticker-content {
@@ -95,7 +89,6 @@
       padding: 0 16px;
     }
 
-    /* 49ers Highlight */
     .ticker-item.niners-game {
       background: rgba(170, 0, 0, 0.45);
       border: 2px solid #B3995D;
@@ -140,43 +133,25 @@
 </head>
 <body>
 
-  <!-- Controls overlay to load YouTube URLs or IDs -->
-  <div class="controls-overlay">
-    <input type="text" id="ytUrlInput" placeholder="Paste YouTube Video URL or ID...">
-    <button onclick="loadYouTubeVideo()">Load</button>
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="loadPage('https://tv.youtube.com')">YouTube TV Main</button>
+    <button class="nav-btn" onclick="loadPage('https://www.youtube.com/channel/UC4R8DWoMoI7CAwX8_LjQHigh')">NFL / Sunday Ticket</button>
+    <a href="https://tv.youtube.com" target="_blank" class="nav-btn secondary">Open in New Tab ↗</a>
   </div>
 
-  <!-- Top YouTube Container -->
-  <div class="video-container">
-    <iframe 
-      id="ytPlayer" 
-      src="https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHigh" 
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-      allowfullscreen>
-    </iframe>
-  </div>
-
-  <!-- Bottom Ticker -->
-  <div class="ticker-wrapper" onclick="toggleFullscreen()">
-    <div class="ticker-content" id="ticker">Loading live sports scores...</div>
+  <div class="app-container">
+    <iframe id="mainViewer" class="stream-frame" src="https://tv.youtube.com" allow="fullscreen; autoplay; encrypted-media"></iframe>
+    
+    <div class="ticker-wrapper" onclick="toggleFullscreen()">
+      <div class="ticker-content" id="ticker">Loading live sports scores...</div>
+    </div>
   </div>
 
   <script>
-    function loadYouTubeVideo() {
-      const input = document.getElementById('ytUrlInput').value.trim();
-      if (!input) return;
-
-      let videoId = input;
-      if (input.includes('v=')) {
-        videoId = input.split('v=')[1].split('&')[0];
-      } else if (input.includes('youtu.be/')) {
-        videoId = input.split('youtu.be/')[1].split('?')[0];
-      }
-
-      document.getElementById('ytPlayer').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    function loadPage(url) {
+      document.getElementById('mainViewer').src = url;
     }
 
-    // ESPN Scores Script
     const ENDPOINTS = [
       'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
