@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>YouTube Sports Dashboard & Ticker</title>
+  <title>YouTube Sports Dashboard & Overlay Ticker</title>
   <style>
     * {
       box-sizing: border-box;
@@ -23,7 +23,7 @@
       width: 100vw;
     }
 
-    /* Embedded YouTube TV view supporting full login */
+    /* Standard YouTube Viewport */
     .viewer-frame {
       flex: 1;
       width: 100%;
@@ -31,7 +31,7 @@
       background: #000;
     }
 
-    /* Top Control Bar */
+    /* Top Control Overlay */
     .top-controls {
       position: absolute;
       top: 10px;
@@ -44,6 +44,16 @@
       border-radius: 8px;
       backdrop-filter: blur(6px);
       border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .top-controls input {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      width: 220px;
     }
 
     .ctrl-btn {
@@ -138,19 +148,20 @@
 </head>
 <body>
 
-  <!-- Controls to jump to YouTube Login or Fullscreen -->
+  <!-- Controls overlay to navigate YouTube links -->
   <div class="top-controls">
-    <button class="ctrl-btn" onclick="loadSource('https://tv.youtube.com')">YouTube TV / Sign In</button>
-    <button class="ctrl-btn secondary" onclick="loadSource('https://www.youtube.com/tv')">YouTube TV App View</button>
-    <button class="ctrl-btn secondary" onclick="toggleFullscreen()">Toggle Fullscreen</button>
+    <input type="text" id="ytUrlInput" placeholder="Paste YouTube Video / Live URL...">
+    <button class="ctrl-btn" onclick="loadCustomUrl()">Load Video</button>
+    <button class="ctrl-btn secondary" onclick="loadSource('https://www.youtube.com')">YouTube Home</button>
+    <button class="ctrl-btn secondary" onclick="toggleFullscreen()">Fullscreen</button>
   </div>
 
   <div class="app-viewport">
-    <!-- Embedded player loaded directly to allow cookies & login context -->
+    <!-- Embed pointing directly to YouTube.com -->
     <iframe 
       id="mainFrame" 
       class="viewer-frame" 
-      src="https://tv.youtube.com" 
+      src="https://www.youtube.com" 
       allow="fullscreen; autoplay; encrypted-media; gyroscope; picture-in-picture"
       allowfullscreen>
     </iframe>
@@ -164,6 +175,22 @@
   <script>
     function loadSource(url) {
       document.getElementById('mainFrame').src = url;
+    }
+
+    function loadCustomUrl() {
+      const input = document.getElementById('ytUrlInput').value.trim();
+      if (!input) return;
+
+      let targetUrl = input;
+      if (input.includes('v=')) {
+        const videoId = input.split('v=')[1].split('&')[0];
+        targetUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      } else if (input.includes('youtu.be/')) {
+        const videoId = input.split('youtu.be/')[1].split('?')[0];
+        targetUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      }
+      
+      document.getElementById('mainFrame').src = targetUrl;
     }
 
     // ESPN Scores Script (NFL, MLB, NBA, NHL)
