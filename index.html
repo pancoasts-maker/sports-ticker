@@ -22,7 +22,7 @@
       color: #ffffff;
       line-height: 48px;
       overflow: hidden;
-      border-top: 2px solid #ef4444;
+      border-top: 3px solid #aa0000;
     }
 
     .ticker-content {
@@ -33,9 +33,43 @@
     }
 
     .ticker-item {
+      display: inline-flex;
+      align-items: center;
       font-weight: 700;
       letter-spacing: 0.5px;
-      font-size: 16px;
+      font-size: 15px;
+      padding: 0 8px;
+    }
+
+    /* 49ers Custom Gold & Red Highlight */
+    .niners-highlight {
+      background: rgba(170, 0, 0, 0.4);
+      border: 1px solid #b3995d;
+      border-radius: 6px;
+      color: #ffdd00;
+      box-shadow: 0 0 10px rgba(179, 153, 93, 0.5);
+    }
+
+    .team-logo {
+      height: 22px;
+      width: 22px;
+      object-fit: contain;
+      margin: 0 6px;
+      vertical-align: middle;
+    }
+
+    .league-tag {
+      color: #94a3b8;
+      font-size: 12px;
+      margin-right: 6px;
+      text-transform: uppercase;
+    }
+
+    .status-tag {
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 500;
+      margin-left: 6px;
     }
 
     @keyframes scroll-ticker {
@@ -82,16 +116,43 @@
             const status = event.status?.type?.shortDetail || 'Scheduled';
 
             if (home && away) {
+              const homeAbbrev = home.team.abbreviation || '';
+              const awayAbbrev = away.team.abbreviation || '';
               const homeScore = home.score !== undefined ? home.score : 0;
               const awayScore = away.score !== undefined ? away.score : 0;
-              const itemText = `[${league}] ${away.team.abbreviation} ${awayScore} @ ${home.team.abbreviation} ${homeScore} (${status})`;
-              allItems.push(itemText);
+              
+              // Team Logo URLs from ESPN CDN
+              const awayLogo = away.team.logo || `https://a.espncdn.com/i/teamlogos/nfl/500/${awayAbbrev.toLowerCase()}.png`;
+              const homeLogo = home.team.logo || `https://a.espncdn.com/i/teamlogos/nfl/500/${homeAbbrev.toLowerCase()}.png`;
+
+              // Check if 49ers are playing
+              const isNiners = awayAbbrev === 'SF' || homeAbbrev === 'SF';
+              const highlightClass = isNiners ? 'niners-highlight' : '';
+
+              const itemHTML = `
+                <span class="ticker-item ${highlightClass}">
+                  <span class="league-tag">[${league}]</span>
+                  <img src="${awayLogo}" class="team-logo" alt="${awayAbbrev}">
+                  ${awayAbbrev} ${awayScore}
+                  &nbsp;@&nbsp;
+                  <img src="${homeLogo}" class="team-logo" alt="${homeAbbrev}">
+                  ${homeAbbrev} ${homeScore}
+                  <span class="status-tag">(${status})</span>
+                </span>
+              `;
+              
+              // Place 49ers game at the front of the ticker list
+              if (isNiners) {
+                allItems.unshift(itemHTML);
+              } else {
+                allItems.push(itemHTML);
+              }
             }
           });
         });
 
         if (allItems.length > 0) {
-          tickerEl.innerHTML = allItems.map(score => `<span class="ticker-item">${score}</span>`).join(' &nbsp;&nbsp;•&nbsp;&nbsp; ');
+          tickerEl.innerHTML = allItems.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ');
         } else {
           tickerEl.innerText = 'No active games scheduled for today.';
         }
@@ -104,5 +165,4 @@
     setInterval(fetchAllScores, 60000);
   </script>
 </body>
-</html>
 </html>
