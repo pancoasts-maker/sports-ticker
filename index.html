@@ -57,7 +57,7 @@
     }
 
     .ctrl-btn {
-      background: #e10600;
+      background: #aa0000;
       color: #ffffff;
       border: none;
       padding: 6px 12px;
@@ -80,7 +80,7 @@
       color: #ffffff;
       line-height: 75px;
       overflow: hidden;
-      border-top: 4px solid #002f6c;
+      border-top: 4px solid #aa0000;
       box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
       z-index: 10;
       cursor: pointer;
@@ -101,6 +101,15 @@
       letter-spacing: 0.8px;
       font-size: 24px;
       padding: 0 16px;
+    }
+
+    /* 49ers Highlight Box */
+    .ticker-item.niners-game {
+      background: rgba(170, 0, 0, 0.45);
+      border: 2px solid #B3995D;
+      border-radius: 8px;
+      padding: 4px 20px;
+      margin: 0 10px;
     }
 
     /* Philadelphia Phillies Highlight Box */
@@ -124,7 +133,7 @@
     /* NFL News Highlight Box */
     .ticker-item.nfl-news {
       background: rgba(30, 41, 59, 0.8);
-      border-left: 4px solid #e10600;
+      border-left: 4px solid #aa0000;
       padding: 4px 16px;
       margin: 0 8px;
     }
@@ -221,9 +230,9 @@
 
     // Live Scores & News Endpoints
     const SCORE_ENDPOINTS = [
+      'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-      'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'
     ];
 
@@ -263,10 +272,12 @@
               const homeLogo = home.team?.logo || '';
               const awayLogo = away.team?.logo || '';
               
+              const isNiners = (home.team?.abbreviation === 'SF' || away.team?.abbreviation === 'SF') && league === 'NFL';
               const isPhillies = (home.team?.abbreviation === 'PHI' || away.team?.abbreviation === 'PHI') && league === 'MLB';
               const isBlues = (home.team?.abbreviation === 'STL' || away.team?.abbreviation === 'STL') && league === 'NHL';
 
               let highlightClass = '';
+              if (isNiners) highlightClass = 'niners-game';
               if (isPhillies) highlightClass = 'phillies-game';
               if (isBlues) highlightClass = 'blues-game';
 
@@ -282,7 +293,7 @@
                 </span>
               `;
 
-              if (isPhillies || isBlues) priorityItems.push(itemHTML);
+              if (isNiners || isPhillies || isBlues) priorityItems.push(itemHTML);
               else standardItems.push(itemHTML);
             }
           });
