@@ -2,17 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Live Sports Overlay Ticker</title>
+  <title>Live Sports Video & Overlay Ticker</title>
+  <!-- HLS.js Library for playing IPTV / m3u8 streams -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background-color: transparent;
+      background-color: #000000;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      cursor: pointer;
     }
 
+    /* Video Player takes full height minus ticker */
+    .video-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: calc(100vh - 80px);
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Bottom Ticker Bar */
     .ticker-wrapper {
       position: fixed;
       bottom: 0;
@@ -25,6 +46,7 @@
       overflow: hidden;
       border-top: 4px solid #aa0000;
       box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
+      z-index: 10;
     }
 
     .ticker-content {
@@ -88,11 +110,31 @@
   </style>
 </head>
 <body>
-  <div class="ticker-wrapper">
+
+  <!-- Top Video Container -->
+  <div class="video-container">
+    <video id="video" controls autoplay muted playsinline></video>
+  </div>
+
+  <!-- Bottom Ticker -->
+  <div class="ticker-wrapper" onclick="toggleFullscreen()">
     <div class="ticker-content" id="ticker">Loading live sports scores...</div>
   </div>
 
   <script>
+    // Replace with your m3u8 stream link or IPTV source URL
+    const streamUrl = 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8';
+
+    const video = document.getElementById('video');
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(streamUrl);
+      hls.attachMedia(video);
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = streamUrl;
+    }
+
+    // ESPN Scores Script
     const ENDPOINTS = [
       'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
@@ -104,14 +146,10 @@
       const tickerEl = document.getElementById('ticker');
       try {
         const promises = ENDPOINTS.map(url => 
-          fetch(url)
-            .then(res => res.ok ? res.json() : null)
-            .catch(() => null)
+          fetch(url).then(res => res.ok ? res.json() : null).catch(() => null)
         );
         const results = await Promise.all(promises);
-        
-        let priorityItems = [];
-        let standardItems = [];
+        let priorityItems = [], standardItems = [];
 
         results.forEach(data => {
           if (!data || !data.events) return;
@@ -128,46 +166,35 @@
             if (home && away) {
               const homeScore = home.score !== undefined ? home.score : 0;
               const awayScore = away.score !== undefined ? away.score : 0;
-
               const homeLogo = home.team?.logo || '';
               const awayLogo = away.team?.logo || '';
-
               const isNiners = home.team?.abbreviation === 'SF' || away.team?.abbreviation === 'SF';
 
               const itemHTML = `
                 <span class="ticker-item ${isNiners ? 'niners-game' : ''}">
                   <span class="league-tag">[${league}]</span>
-                  ${awayLogo ? `<img src="${awayLogo}" class="team-logo" alt="${away.team.abbreviation}">` : ''}
+                  ${awayLogo ? `<img src="${awayLogo}" class="team-logo">` : ''}
                   ${away.team.abbreviation} ${awayScore}
                   <span class="vs-text">@</span>
-                  ${homeLogo ? `<img src="${homeLogo}" class="team-logo" alt="${home.team.abbreviation}">` : ''}
+                  ${homeLogo ? `<img src="${homeLogo}" class="team-logo">` : ''}
                   ${home.team.abbreviation} ${homeScore}
                   <span class="game-status">(${status})</span>
                 </span>
               `;
 
-              if (isNiners) {
-                priorityItems.push(itemHTML);
-              } else {
-                standardItems.push(itemHTML);
-              }
+              if (isNiners) priorityItems.push(itemHTML);
+              else standardItems.push(itemHTML);
             }
           });
         });
 
         const allItems = [...priorityItems, ...standardItems];
-
-        if (allItems.length > 0) {
-          tickerEl.innerHTML = allItems.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ');
-        } else {
-          tickerEl.innerText = 'No active games scheduled for today.';
-        }
+        tickerEl.innerHTML = allItems.length > 0 ? allItems.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ') : 'No games today.';
       } catch (err) {
         tickerEl.innerText = 'Unable to connect to ESPN feed.';
       }
     }
 
-    // Toggle Fullscreen on click, tap, or remote SELECT press
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
@@ -176,9 +203,6 @@
       }
     }
 
-    document.body.addEventListener('click', toggleFullscreen);
-
-    // Initial fetch & set refresh loop
     fetchAllScores();
     setInterval(fetchAllScores, 60000);
   </script>
