@@ -17,59 +17,67 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 48px;
+      height: 80px; /* Increased height from 52px */
       background: rgba(15, 23, 42, 0.95);
       color: #ffffff;
-      line-height: 48px;
+      line-height: 80px;
       overflow: hidden;
-      border-top: 3px solid #aa0000;
+      border-top: 4px solid #aa0000; /* Thicker 49ers Red Border */
+      box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
     }
 
     .ticker-content {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
       white-space: nowrap;
       padding-left: 100%;
-      animation: scroll-ticker 35s linear infinite;
+      animation: scroll-ticker 45s linear infinite; /* Slightly slower scroll for larger text */
     }
 
     .ticker-item {
       display: inline-flex;
       align-items: center;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      font-size: 15px;
-      padding: 0 8px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      font-size: 26px; /* Increased font size from 16px */
+      padding: 0 16px;
     }
 
-    /* 49ers Custom Gold & Red Highlight */
-    .niners-highlight {
-      background: rgba(170, 0, 0, 0.4);
-      border: 1px solid #b3995d;
-      border-radius: 6px;
-      color: #ffdd00;
-      box-shadow: 0 0 10px rgba(179, 153, 93, 0.5);
+    /* 49ers Highlight */
+    .ticker-item.niners-game {
+      background: rgba(170, 0, 0, 0.45);
+      border: 2px solid #B3995D;
+      border-radius: 8px;
+      padding: 4px 20px;
+      margin: 0 10px;
     }
 
     .team-logo {
-      height: 22px;
-      width: 22px;
+      height: 44px; /* Increased logo size from 24px */
+      width: 44px;
       object-fit: contain;
-      margin: 0 6px;
       vertical-align: middle;
+      margin: 0 10px;
     }
 
     .league-tag {
       color: #94a3b8;
-      font-size: 12px;
-      margin-right: 6px;
-      text-transform: uppercase;
+      font-size: 20px;
+      font-weight: 800;
+      margin-right: 10px;
     }
 
-    .status-tag {
+    .vs-text {
       color: #cbd5e1;
-      font-size: 13px;
       font-weight: 500;
-      margin-left: 6px;
+      margin: 0 8px;
+    }
+
+    .game-status {
+      color: #38bdf8;
+      font-weight: 600;
+      font-size: 20px;
+      margin-left: 12px;
     }
 
     @keyframes scroll-ticker {
@@ -101,7 +109,8 @@
         );
         const results = await Promise.all(promises);
         
-        let allItems = [];
+        let priorityItems = [];
+        let standardItems = [];
 
         results.forEach(data => {
           if (!data || !data.events) return;
@@ -116,40 +125,36 @@
             const status = event.status?.type?.shortDetail || 'Scheduled';
 
             if (home && away) {
-              const homeAbbrev = home.team.abbreviation || '';
-              const awayAbbrev = away.team.abbreviation || '';
               const homeScore = home.score !== undefined ? home.score : 0;
               const awayScore = away.score !== undefined ? away.score : 0;
-              
-              // Team Logo URLs from ESPN CDN
-              const awayLogo = away.team.logo || `https://a.espncdn.com/i/teamlogos/nfl/500/${awayAbbrev.toLowerCase()}.png`;
-              const homeLogo = home.team.logo || `https://a.espncdn.com/i/teamlogos/nfl/500/${homeAbbrev.toLowerCase()}.png`;
 
-              // Check if 49ers are playing
-              const isNiners = awayAbbrev === 'SF' || homeAbbrev === 'SF';
-              const highlightClass = isNiners ? 'niners-highlight' : '';
+              const homeLogo = home.team?.logo || '';
+              const awayLogo = away.team?.logo || '';
+
+              const isNiners = home.team?.abbreviation === 'SF' || away.team?.abbreviation === 'SF';
 
               const itemHTML = `
-                <span class="ticker-item ${highlightClass}">
+                <span class="ticker-item ${isNiners ? 'niners-game' : ''}">
                   <span class="league-tag">[${league}]</span>
-                  <img src="${awayLogo}" class="team-logo" alt="${awayAbbrev}">
-                  ${awayAbbrev} ${awayScore}
-                  &nbsp;@&nbsp;
-                  <img src="${homeLogo}" class="team-logo" alt="${homeAbbrev}">
-                  ${homeAbbrev} ${homeScore}
-                  <span class="status-tag">(${status})</span>
+                  ${awayLogo ? `<img src="${awayLogo}" class="team-logo" alt="${away.team.abbreviation}">` : ''}
+                  ${away.team.abbreviation} ${awayScore}
+                  <span class="vs-text">@</span>
+                  ${homeLogo ? `<img src="${homeLogo}" class="team-logo" alt="${home.team.abbreviation}">` : ''}
+                  ${home.team.abbreviation} ${homeScore}
+                  <span class="game-status">(${status})</span>
                 </span>
               `;
-              
-              // Place 49ers game at the front of the ticker list
+
               if (isNiners) {
-                allItems.unshift(itemHTML);
+                priorityItems.push(itemHTML);
               } else {
-                allItems.push(itemHTML);
+                standardItems.push(itemHTML);
               }
             }
           });
         });
+
+        const allItems = [...priorityItems, ...standardItems];
 
         if (allItems.length > 0) {
           tickerEl.innerHTML = allItems.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ');
