@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Live Sports Video & Overlay Ticker</title>
-  <!-- Correct HLS.js Library for playing m3u8 streams -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <title>Live Sports YouTube & Overlay Ticker</title>
   <style>
     body {
       margin: 0;
@@ -14,7 +12,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    /* Video Player takes full height minus ticker */
+    /* YouTube Container takes full height minus ticker */
     .video-container {
       position: absolute;
       top: 0;
@@ -22,15 +20,45 @@
       width: 100vw;
       height: calc(100vh - 80px);
       background: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
 
-    video {
+    iframe {
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      border: none;
+    }
+
+    /* Floating input bar to change YouTube Video/Live Stream ID or URL */
+    .controls-overlay {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 20;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .controls-overlay input {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 240px;
+    }
+
+    .controls-overlay button {
+      background: #aa0000;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
     /* Bottom Ticker Bar */
@@ -112,9 +140,20 @@
 </head>
 <body>
 
-  <!-- Top Video Container -->
+  <!-- Controls overlay to load YouTube URLs or IDs -->
+  <div class="controls-overlay">
+    <input type="text" id="ytUrlInput" placeholder="Paste YouTube Video URL or ID...">
+    <button onclick="loadYouTubeVideo()">Load</button>
+  </div>
+
+  <!-- Top YouTube Container -->
   <div class="video-container">
-    <video id="video" controls autoplay muted playsinline></video>
+    <iframe 
+      id="ytPlayer" 
+      src="https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHigh" 
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+      allowfullscreen>
+    </iframe>
   </div>
 
   <!-- Bottom Ticker -->
@@ -123,22 +162,18 @@
   </div>
 
   <script>
-    // Live stream link (Replace with any valid .m3u8 stream)
-    const streamUrl = 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8';
+    function loadYouTubeVideo() {
+      const input = document.getElementById('ytUrlInput').value.trim();
+      if (!input) return;
 
-    const video = document.getElementById('video');
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, function() {
-        video.play().catch(() => {});
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
-      video.addEventListener('loadedmetadata', function() {
-        video.play().catch(() => {});
-      });
+      let videoId = input;
+      if (input.includes('v=')) {
+        videoId = input.split('v=')[1].split('&')[0];
+      } else if (input.includes('youtu.be/')) {
+        videoId = input.split('youtu.be/')[1].split('?')[0];
+      }
+
+      document.getElementById('ytPlayer').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     }
 
     // ESPN Scores Script
