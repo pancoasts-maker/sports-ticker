@@ -168,6 +168,14 @@
 
     fetchAllScores();
     setInterval(fetchAllScores, 60000);
+    // Toggle Fullscreen on click or remote SELECT press
+document.body.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+});
   </script>
 </body>
 </html>
