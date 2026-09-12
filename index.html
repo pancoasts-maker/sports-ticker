@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Live Sports Video & Overlay Ticker</title>
-  <!-- HLS.js Library for playing IPTV / m3u8 streams -->
-  <script src="https://iptv-org.github.io/iptv/index.m3u"></script>
+  <!-- Correct HLS.js Library for playing m3u8 streams -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body {
       margin: 0;
@@ -47,6 +47,7 @@
       border-top: 4px solid #aa0000;
       box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
       z-index: 10;
+      cursor: pointer;
     }
 
     .ticker-content {
@@ -122,7 +123,7 @@
   </div>
 
   <script>
-    // Replace with your m3u8 stream link or IPTV source URL
+    // Live stream link (Replace with any valid .m3u8 stream)
     const streamUrl = 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8';
 
     const video = document.getElementById('video');
@@ -130,8 +131,14 @@
       const hls = new Hls();
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.play().catch(() => {});
+      });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = streamUrl;
+      video.addEventListener('loadedmetadata', function() {
+        video.play().catch(() => {});
+      });
     }
 
     // ESPN Scores Script
