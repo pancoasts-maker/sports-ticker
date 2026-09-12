@@ -2,56 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sports Dashboard Ticker</title>
+  <title>Sports Ticker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background-color: #000; color: #fff; font-family: system-ui, sans-serif; overflow: hidden; }
-
-    .app-viewport { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
-
-    /* Top Control & Nav Bar */
-    .top-bar {
-      height: 50px;
-      background: #0f172a;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      border-bottom: 1px solid #334155;
-    }
-
-    .nav-links { display: flex; gap: 12px; }
-
-    .nav-btn {
-      background: #1e293b;
-      color: #fff;
-      border: 1px solid #475569;
-      padding: 6px 14px;
-      border-radius: 4px;
-      font-weight: 600;
-      text-decoration: none;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .nav-btn.directv {
-      background: #00A8E8;
-      border-color: #00A8E8;
-      color: #000;
-      font-weight: 800;
-    }
-
-    /* Video Frame Container */
-    .viewer-frame { flex: 1; width: 100%; border: none; background: #000; }
-
-    /* Ticker Styling */
-    .ticker-wrapper {
-      height: 70px;
-      width: 100%;
+    body {
       background: rgba(15, 23, 42, 0.95);
-      line-height: 70px;
+      color: #fff;
+      font-family: system-ui, -apple-system, sans-serif;
       overflow: hidden;
-      border-top: 4px solid #aa0000;
+      border-top: 3px solid #aa0000;
+      -webkit-app-region: drag;
+    }
+
+    .ticker-wrapper {
+      height: 72px;
+      width: 100vw;
+      line-height: 72px;
+      overflow: hidden;
     }
 
     .ticker-content {
@@ -59,61 +26,53 @@
       align-items: center;
       white-space: nowrap;
       padding-left: 100%;
-      animation: scroll-ticker 55s linear infinite;
+      animation: scroll-ticker 45s linear infinite;
     }
 
-    .ticker-item { display: inline-flex; align-items: center; font-weight: 800; font-size: 22px; padding: 0 16px; }
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      font-weight: 800;
+      font-size: 20px;
+      padding: 0 14px;
+      -webkit-app-region: no-drag;
+    }
 
-    /* Highlights */
-    .niners-game { background: rgba(170, 0, 0, 0.45); border: 2px solid #B3995D; border-radius: 6px; margin: 0 8px; }
-    .phillies-game { background: rgba(231, 15, 60, 0.35); border: 2px solid #E70F3C; border-radius: 6px; margin: 0 8px; }
-    .blues-game { background: rgba(0, 47, 108, 0.55); border: 2px solid #FCB514; border-radius: 6px; margin: 0 8px; }
+    /* Highlight themes for featured teams */
+    .niners-game { background: rgba(170, 0, 0, 0.6); border: 2px solid #B3995D; border-radius: 6px; margin: 0 8px; }
+    .phillies-game { background: rgba(231, 15, 60, 0.5); border: 2px solid #E70F3C; border-radius: 6px; margin: 0 8px; }
+    .blues-game { background: rgba(0, 47, 108, 0.7); border: 2px solid #FCB514; border-radius: 6px; margin: 0 8px; }
 
-    .team-logo { height: 36px; width: 36px; margin: 0 8px; vertical-align: middle; }
-    .league-tag { color: #94a3b8; font-size: 16px; margin-right: 8px; }
+    .team-logo { height: 32px; width: 32px; margin: 0 8px; vertical-align: middle; }
+    .league-tag { color: #94a3b8; font-size: 15px; margin-right: 6px; }
     .vs-text { color: #cbd5e1; margin: 0 6px; }
-    .game-status { color: #38bdf8; font-size: 16px; margin-left: 10px; }
+    .game-status { color: #38bdf8; font-size: 15px; margin-left: 8px; }
 
     @keyframes scroll-ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
   </style>
 </head>
 <body>
 
-  <div class="app-viewport">
-    <div class="top-bar">
-      <div class="nav-links">
-        <a href="https://stream.directv.com" target="_blank" class="nav-btn directv">Launch DIRECTV Stream ↗</a>
-        <button class="nav-btn" onclick="loadStream('https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig')">YouTube Stream</button>
-      </div>
-    </div>
-
-    <!-- Media Player -->
-    <iframe id="mainFrame" class="viewer-frame" src="https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig" allowfullscreen></iframe>
-
-    <!-- Live Ticker -->
-    <div class="ticker-wrapper">
-      <div class="ticker-content" id="ticker">Loading live sports scores...</div>
-    </div>
+  <div class="ticker-wrapper">
+    <div class="ticker-content" id="ticker">Loading live sports scores...</div>
   </div>
 
   <script>
-    function loadStream(url) {
-      document.getElementById('mainFrame').src = url;
-    }
-
-    const ENDPOINTS = [
+    const SCORE_ENDPOINTS = [
       'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
-      'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'
+      'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+      'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard'
     ];
 
     async function fetchScores() {
       const tickerEl = document.getElementById('ticker');
       try {
-        const promises = ENDPOINTS.map(u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null));
+        const promises = SCORE_ENDPOINTS.map(u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null));
         const data = await Promise.all(promises);
 
-        let priority = [], standard = [];
+        let priorityGames = [];
+        let standardGames = [];
 
         data.forEach(d => {
           if (!d || !d.events) return;
@@ -123,6 +82,7 @@
             const comp = event.competitions?.[0];
             if (!comp) return;
 
+            // Handle standard team sports (NFL, MLB, NHL)
             const home = comp.competitors?.find(c => c.homeAway === 'home');
             const away = comp.competitors?.find(c => c.homeAway === 'away');
             const status = event.status?.type?.shortDetail || 'Scheduled';
@@ -149,16 +109,30 @@
                 </span>
               `;
 
-              if (isNiners || isPhillies || isBlues) priority.push(html);
-              else standard.push(html);
+              if (isNiners || isPhillies || isBlues) priorityGames.push(html);
+              else standardGames.push(html);
+            }
+            // Handle Golf Leaderboards
+            else if (league === 'PGA') {
+              const leaders = comp.competitors?.slice(0, 3).map(c => `${c.athlete?.shortName || c.athlete?.displayName} (${c.score || 'E'})`).join(', ');
+              if (leaders) {
+                const html = `
+                  <span class="ticker-item">
+                    <span class="league-tag">[PGA]</span>
+                    <span>${event.name}: ${leaders}</span>
+                    <span class="game-status">(${status})</span>
+                  </span>
+                `;
+                standardGames.push(html);
+              }
             }
           });
         });
 
-        const all = [...priority, ...standard];
+        const all = [...priorityGames, ...standardGames];
         tickerEl.innerHTML = all.length ? all.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ') : 'No live scores available.';
       } catch (e) {
-        tickerEl.innerText = 'Unable to load live scores.';
+        tickerEl.innerText = 'Unable to load scores.';
       }
     }
 
