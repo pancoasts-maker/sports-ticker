@@ -10,6 +10,7 @@
       background-color: transparent;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      cursor: pointer;
     }
 
     .ticker-wrapper {
@@ -17,12 +18,12 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 80px; /* Increased height from 52px */
+      height: 80px;
       background: rgba(15, 23, 42, 0.95);
       color: #ffffff;
       line-height: 80px;
       overflow: hidden;
-      border-top: 4px solid #aa0000; /* Thicker 49ers Red Border */
+      border-top: 4px solid #aa0000;
       box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
     }
 
@@ -31,7 +32,7 @@
       align-items: center;
       white-space: nowrap;
       padding-left: 100%;
-      animation: scroll-ticker 45s linear infinite; /* Slightly slower scroll for larger text */
+      animation: scroll-ticker 45s linear infinite;
     }
 
     .ticker-item {
@@ -39,7 +40,7 @@
       align-items: center;
       font-weight: 800;
       letter-spacing: 0.8px;
-      font-size: 26px; /* Increased font size from 16px */
+      font-size: 26px;
       padding: 0 16px;
     }
 
@@ -53,7 +54,7 @@
     }
 
     .team-logo {
-      height: 44px; /* Increased logo size from 24px */
+      height: 44px;
       width: 44px;
       object-fit: contain;
       vertical-align: middle;
@@ -166,16 +167,20 @@
       }
     }
 
+    // Toggle Fullscreen on click, tap, or remote SELECT press
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    document.body.addEventListener('click', toggleFullscreen);
+
+    // Initial fetch & set refresh loop
     fetchAllScores();
     setInterval(fetchAllScores, 60000);
-    // Toggle Fullscreen on click or remote SELECT press
-document.body.addEventListener('click', () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  } else {
-    document.exitFullscreen().catch(() => {});
-  }
-});
   </script>
 </body>
 </html>
