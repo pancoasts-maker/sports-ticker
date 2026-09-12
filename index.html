@@ -23,7 +23,7 @@
       width: 100vw;
     }
 
-    /* Standard YouTube Viewport */
+    /* Embedded YouTube Player Viewport */
     .viewer-frame {
       flex: 1;
       width: 100%;
@@ -31,7 +31,7 @@
       background: #000;
     }
 
-    /* Top Control Overlay */
+    /* Top Control Bar */
     .top-controls {
       position: absolute;
       top: 10px;
@@ -53,7 +53,7 @@
       padding: 6px 10px;
       border-radius: 4px;
       font-size: 13px;
-      width: 220px;
+      width: 260px;
     }
 
     .ctrl-btn {
@@ -148,21 +148,20 @@
 </head>
 <body>
 
-  <!-- Controls overlay to navigate YouTube links -->
+  <!-- Controls overlay -->
   <div class="top-controls">
     <input type="text" id="ytUrlInput" placeholder="Paste YouTube Video / Live URL...">
-    <button class="ctrl-btn" onclick="loadCustomUrl()">Load Video</button>
-    <button class="ctrl-btn secondary" onclick="loadSource('https://www.youtube.com')">YouTube Home</button>
+    <button class="ctrl-btn" onclick="loadCustomUrl()">Load Stream</button>
     <button class="ctrl-btn secondary" onclick="toggleFullscreen()">Fullscreen</button>
   </div>
 
   <div class="app-viewport">
-    <!-- Embed pointing directly to YouTube.com -->
+    <!-- Embedded YouTube Player Endpoint -->
     <iframe 
       id="mainFrame" 
       class="viewer-frame" 
-      src="https://www.youtube.com" 
-      allow="fullscreen; autoplay; encrypted-media; gyroscope; picture-in-picture"
+      src="https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig" 
+      allow="fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowfullscreen>
     </iframe>
 
@@ -173,27 +172,25 @@
   </div>
 
   <script>
-    function loadSource(url) {
-      document.getElementById('mainFrame').src = url;
-    }
-
     function loadCustomUrl() {
       const input = document.getElementById('ytUrlInput').value.trim();
       if (!input) return;
 
-      let targetUrl = input;
+      let videoId = input;
+
+      // Extract video ID from standard full or short YouTube links
       if (input.includes('v=')) {
-        const videoId = input.split('v=')[1].split('&')[0];
-        targetUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        videoId = input.split('v=')[1].split('&')[0];
       } else if (input.includes('youtu.be/')) {
-        const videoId = input.split('youtu.be/')[1].split('?')[0];
-        targetUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        videoId = input.split('youtu.be/')[1].split('?')[0];
+      } else if (input.includes('embed/')) {
+        videoId = input.split('embed/')[1].split('?')[0];
       }
       
-      document.getElementById('mainFrame').src = targetUrl;
+      document.getElementById('mainFrame').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     }
 
-    // ESPN Scores Script (NFL, MLB, NBA, NHL)
+    // ESPN Live Scores API
     const ENDPOINTS = [
       'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
