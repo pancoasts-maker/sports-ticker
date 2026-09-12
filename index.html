@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Sports Overlay Ticker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ticker-wrapper">
+    <div class="ticker-content" id="ticker">Loading live sports scores...</div>
+  </div>
+
+  <script>
+    // ESPN API Scoreboard Endpoints
+    const ENDPOINTS = [
+      'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+      'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+      'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+      'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'
+    ];
+
+    async function fetchAllScores() {
+      try {
+        const promises = ENDPOINTS.map(url => fetch(url).then(res => res.json()).catch(() => null));
+        const results = await Promise.all(promises);
+        
+        let allItems = [];
+
+        results.forEach(data => {
+          if (!data || !data.events) return;
+          const league = data.leagues?.[0]?.abbreviation || '';
+
+          data.events.forEach(event => {
+            const comp = event.competitions?.[0];
+            if (!comp) return;
+
+            const home = comp.competitors.find(c => c.homeAway === 'home');
+            const away = comp.competitors.find(c => c.away === 'away');
+            const status = event.status?.type?.shortDetail || '';
+
+            const itemText = `[${league}] ${away.team.abbreviation} ${away.score || 0} @ ${home.team.abbreviation} ${home.score || 0} (${status})`;
+            allItems.push(itemText);
+          });
+        });
+
+        const tickerEl = document.getElementById('ticker');
+        if (allItems.length > 0) {
+          tickerEl.innerHTML = allItems.map(score => `<span class="ticker-item">${score}</span>`).join(' &nbsp;•&nbsp; ');
+        } else {
+          tickerEl.innerText = 'No live games or scheduled games found for today.';
+        }
+      } catch (err) {
+        document.getElementById('ticker').innerText = 'Error loading sports data.';
+      }
+    }
+
+    // Initial fetch & auto-refresh every 60 seconds
+    fetchAllScores();
+    setInterval(fetchAllScores, 60000);
+  </script>
+</body>
+</html>
