@@ -57,7 +57,7 @@
     }
 
     .ctrl-btn {
-      background: #aa0000;
+      background: #e10600;
       color: #ffffff;
       border: none;
       padding: 6px 12px;
@@ -80,7 +80,7 @@
       color: #ffffff;
       line-height: 75px;
       overflow: hidden;
-      border-top: 4px solid #aa0000;
+      border-top: 4px solid #002f6c;
       box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
       z-index: 10;
       cursor: pointer;
@@ -91,7 +91,7 @@
       align-items: center;
       white-space: nowrap;
       padding-left: 100%;
-      animation: scroll-ticker 45s linear infinite;
+      animation: scroll-ticker 55s linear infinite;
     }
 
     .ticker-item {
@@ -103,13 +103,30 @@
       padding: 0 16px;
     }
 
-    /* 49ers Highlight Box */
-    .ticker-item.niners-game {
-      background: rgba(170, 0, 0, 0.45);
-      border: 2px solid #B3995D;
+    /* Philadelphia Phillies Highlight Box */
+    .ticker-item.phillies-game {
+      background: rgba(231, 15, 60, 0.35);
+      border: 2px solid #E70F3C;
       border-radius: 8px;
       padding: 4px 20px;
       margin: 0 10px;
+    }
+
+    /* St. Louis Blues Highlight Box */
+    .ticker-item.blues-game {
+      background: rgba(0, 47, 108, 0.55);
+      border: 2px solid #FCB514;
+      border-radius: 8px;
+      padding: 4px 20px;
+      margin: 0 10px;
+    }
+
+    /* NFL News Highlight Box */
+    .ticker-item.nfl-news {
+      background: rgba(30, 41, 59, 0.8);
+      border-left: 4px solid #e10600;
+      padding: 4px 16px;
+      margin: 0 8px;
     }
 
     .team-logo {
@@ -127,6 +144,13 @@
       margin-right: 10px;
     }
 
+    .news-tag {
+      color: #ef4444;
+      font-size: 18px;
+      font-weight: 800;
+      margin-right: 10px;
+    }
+
     .vs-text {
       color: #cbd5e1;
       font-weight: 500;
@@ -138,6 +162,12 @@
       font-weight: 600;
       font-size: 18px;
       margin-left: 12px;
+    }
+
+    .news-text {
+      color: #f8fafc;
+      font-weight: 600;
+      font-size: 20px;
     }
 
     @keyframes scroll-ticker {
@@ -167,7 +197,7 @@
 
     <!-- Scrolling Sports Ticker Bar -->
     <div class="ticker-wrapper" onclick="toggleFullscreen()">
-      <div class="ticker-content" id="ticker">Loading live sports scores...</div>
+      <div class="ticker-content" id="ticker">Loading live sports scores & NFL news...</div>
     </div>
   </div>
 
@@ -178,7 +208,6 @@
 
       let videoId = input;
 
-      // Extract video ID from standard full or short YouTube links
       if (input.includes('v=')) {
         videoId = input.split('v=')[1].split('&')[0];
       } else if (input.includes('youtu.be/')) {
@@ -190,24 +219,33 @@
       document.getElementById('mainFrame').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     }
 
-    // ESPN Live Scores API
-    const ENDPOINTS = [
-      'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+    // Live Scores & News Endpoints
+    const SCORE_ENDPOINTS = [
       'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
-      'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-      'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'
+      'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+      'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+      'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'
     ];
 
-    async function fetchAllScores() {
+    const NFL_NEWS_ENDPOINT = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/news';
+
+    async function fetchAllData() {
       const tickerEl = document.getElementById('ticker');
       try {
-        const promises = ENDPOINTS.map(url => 
+        const scorePromises = SCORE_ENDPOINTS.map(url => 
           fetch(url).then(res => res.ok ? res.json() : null).catch(() => null)
         );
-        const results = await Promise.all(promises);
-        let priorityItems = [], standardItems = [];
+        const newsPromise = fetch(NFL_NEWS_ENDPOINT).then(res => res.ok ? res.json() : null).catch(() => null);
 
-        results.forEach(data => {
+        const [scoreResults, newsData] = await Promise.all([
+          Promise.all(scorePromises),
+          newsPromise
+        ]);
+
+        let priorityItems = [], standardItems = [], newsItems = [];
+
+        // Parse Live Scores
+        scoreResults.forEach(data => {
           if (!data || !data.events) return;
           const league = data.leagues?.[0]?.abbreviation || 'SPORTS';
 
@@ -224,10 +262,16 @@
               const awayScore = away.score !== undefined ? away.score : 0;
               const homeLogo = home.team?.logo || '';
               const awayLogo = away.team?.logo || '';
-              const isNiners = home.team?.abbreviation === 'SF' || away.team?.abbreviation === 'SF';
+              
+              const isPhillies = (home.team?.abbreviation === 'PHI' || away.team?.abbreviation === 'PHI') && league === 'MLB';
+              const isBlues = (home.team?.abbreviation === 'STL' || away.team?.abbreviation === 'STL') && league === 'NHL';
+
+              let highlightClass = '';
+              if (isPhillies) highlightClass = 'phillies-game';
+              if (isBlues) highlightClass = 'blues-game';
 
               const itemHTML = `
-                <span class="ticker-item ${isNiners ? 'niners-game' : ''}">
+                <span class="ticker-item ${highlightClass}">
                   <span class="league-tag">[${league}]</span>
                   ${awayLogo ? `<img src="${awayLogo}" class="team-logo">` : ''}
                   ${away.team.abbreviation} ${awayScore}
@@ -238,16 +282,31 @@
                 </span>
               `;
 
-              if (isNiners) priorityItems.push(itemHTML);
+              if (isPhillies || isBlues) priorityItems.push(itemHTML);
               else standardItems.push(itemHTML);
             }
           });
         });
 
-        const allItems = [...priorityItems, ...standardItems];
-        tickerEl.innerHTML = allItems.length > 0 ? allItems.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ') : 'No games scheduled right now.';
+        // Parse NFL News Headlines
+        if (newsData && newsData.articles) {
+          newsData.articles.slice(0, 8).forEach(article => {
+            if (article.headline) {
+              newsItems.push(`
+                <span class="ticker-item nfl-news">
+                  <span class="news-tag">[NFL HEADLINES]</span>
+                  <span class="news-text">${article.headline}</span>
+                </span>
+              `);
+            }
+          });
+        }
+
+        // Priority order: Team Highlights -> Standard Scores -> NFL News
+        const allItems = [...priorityItems, ...standardItems, ...newsItems];
+        tickerEl.innerHTML = allItems.length > 0 ? allItems.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ') : 'No sports updates available right now.';
       } catch (err) {
-        tickerEl.innerText = 'Unable to connect to live ESPN score feed.';
+        tickerEl.innerText = 'Unable to connect to live sports feed.';
       }
     }
 
@@ -259,8 +318,8 @@
       }
     }
 
-    fetchAllScores();
-    setInterval(fetchAllScores, 60000);
+    fetchAllData();
+    setInterval(fetchAllData, 60000);
   </script>
 </body>
 </html>
