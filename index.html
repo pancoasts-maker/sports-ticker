@@ -42,11 +42,15 @@
     .niners-game { background: rgba(170, 0, 0, 0.6); border: 2px solid #B3995D; border-radius: 6px; margin: 0 8px; }
     .phillies-game { background: rgba(231, 15, 60, 0.5); border: 2px solid #E70F3C; border-radius: 6px; margin: 0 8px; }
     .blues-game { background: rgba(0, 47, 108, 0.7); border: 2px solid #FCB514; border-radius: 6px; margin: 0 8px; }
+    .fantasy-item { background: rgba(22, 101, 52, 0.6); border: 2px solid #4ade80; border-radius: 6px; margin: 0 8px; }
 
     .team-logo { height: 32px; width: 32px; margin: 0 8px; vertical-align: middle; }
     .league-tag { color: #94a3b8; font-size: 15px; margin-right: 6px; }
     .vs-text { color: #cbd5e1; margin: 0 6px; }
     .game-status { color: #38bdf8; font-size: 15px; margin-left: 8px; }
+    .fantasy-pts { color: #4ade80; margin-left: 6px; }
+    .fantasy-pos { color: #94a3b8; font-size: 13px; margin-left: 4px; }
+    .fantasy-players { color: #4ade80; font-size: 14px; margin-left: 8px; }
 
     @keyframes scroll-ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
   </style>
@@ -65,11 +69,85 @@
       'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard'
     ];
 
+    // ESPN Fantasy Football: fill these in to show your team and players.
+    // leagueId is the number after "leagueId=" in your league's URL on fantasy.espn.com.
+    // teamId is the number after "teamId=" when you open your own team page.
+    // Private leagues must be set to "viewable to public" in League Settings (LM only).
+    const FANTASY = {
+      leagueId: '784043',
+      teamId: 2,
+      season: new Date().getMonth() < 2 ? new Date().getFullYear() - 1 : new Date().getFullYear()
+    };
+
+    const LINEUP_SLOTS = { 0: 'QB', 2: 'RB', 4: 'WR', 6: 'TE', 16: 'D/ST', 17: 'K', 23: 'FLEX' };
+    const BENCH_SLOTS = [20, 21];
+
+    const escapeHtml = str => String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmtPts = n => (Math.round((n || 0) * 10) / 10).toFixed(1);
+    const teamName = t => t?.name || [t?.location, t?.nickname].filter(Boolean).join(' ') || t?.abbrev || 'Team';
+
+    async function fetchFantasy() {
+      if (!FANTASY.leagueId || !FANTASY.teamId) return null;
+      const base = `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${FANTASY.season}/segments/0/leagues/${FANTASY.leagueId}`;
+      try {
+        const league = await fetch(`${base}?view=mStatus`).then(r => r.ok ? r.json() : null);
+        const week = league?.scoringPeriodId;
+        const matchupPeriod = league?.status?.currentMatchupPeriod;
+        if (!week) return null;
+
+        const d = await fetch(`${base}?view=mTeam&view=mRoster&view=mMatchupScore&scoringPeriodId=${week}`).then(r => r.ok ? r.json() : null);
+        const teams = d?.teams || [];
+        const myTeam = teams.find(t => t.id === Number(FANTASY.teamId));
+        if (!myTeam) return null;
+
+        const matchup = (d.schedule || []).find(m => m.matchupPeriodId === matchupPeriod && (m.home?.teamId === myTeam.id || m.away?.teamId === myTeam.id));
+        const mySide = matchup && (matchup.home?.teamId === myTeam.id ? matchup.home : matchup.away);
+        const oppSide = matchup && (matchup.home?.teamId === myTeam.id ? matchup.away : matchup.home);
+        const opponent = teams.find(t => t.id === oppSide?.teamId);
+        const sidePts = side => side?.totalPointsLive ?? side?.totalPoints ?? 0;
+
+        const starters = (myTeam.roster?.entries || [])
+          .filter(e => !BENCH_SLOTS.includes(e.lineupSlotId))
+          .map(e => {
+            const player = e.playerPoolEntry?.player;
+            const weekStat = player?.stats?.find(s => s.scoringPeriodId === week && s.statSourceId === 0);
+            return {
+              name: player?.fullName || 'Player',
+              slot: LINEUP_SLOTS[e.lineupSlotId] || '',
+              proTeamId: player?.proTeamId,
+              points: weekStat?.appliedTotal ?? e.playerPoolEntry?.appliedStatTotal ?? 0
+            };
+          })
+          .sort((a, b) => Object.values(LINEUP_SLOTS).indexOf(a.slot) - Object.values(LINEUP_SLOTS).indexOf(b.slot));
+
+        const rec = myTeam.record?.overall;
+        const recordText = rec ? `${rec.wins}-${rec.losses}${rec.ties ? `-${rec.ties}` : ''}` : '';
+
+        const scoreHtml = `
+          <span class="ticker-item fantasy-item">
+            <span class="league-tag">[FANTASY Wk ${week}]</span>
+            ${escapeHtml(teamName(myTeam))}<span class="fantasy-pts">${fmtPts(sidePts(mySide))}</span>
+            ${opponent ? `<span class="vs-text">vs</span>${escapeHtml(teamName(opponent))} ${fmtPts(sidePts(oppSide))}` : ''}
+            ${recordText ? `<span class="game-status">(${recordText})</span>` : ''}
+          </span>
+        `;
+        const playerHtml = starters.map(p => `
+          <span class="ticker-item">
+            ${escapeHtml(p.name)}<span class="fantasy-pos">${p.slot}</span><span class="fantasy-pts">${fmtPts(p.points)}</span>
+          </span>
+        `);
+
+        return { items: [scoreHtml, ...playerHtml], starters };
+      } catch (e) {
+        return null;
+      }
+    }
+
     async function fetchScores() {
       const tickerEl = document.getElementById('ticker');
       try {
         const promises = SCORE_ENDPOINTS.map(u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null));
-        const data = await Promise.all(promises);
+        const [data, fantasy] = await Promise.all([Promise.all(promises), fetchFantasy()]);
 
         let priorityGames = [];
         let standardGames = [];
@@ -97,6 +175,11 @@
               if (isPhillies) cls = 'phillies-game';
               if (isBlues) cls = 'blues-game';
 
+              // Flag NFL games featuring your fantasy starters
+              const myPlayers = league === 'NFL' && fantasy
+                ? fantasy.starters.filter(p => String(p.proTeamId) === String(home.team?.id) || String(p.proTeamId) === String(away.team?.id))
+                : [];
+
               const html = `
                 <span class="ticker-item ${cls}">
                   <span class="league-tag">[${league}]</span>
@@ -106,6 +189,7 @@
                   ${home.team?.logo ? `<img src="${home.team.logo}" class="team-logo">` : ''}
                   ${home.team.abbreviation} ${home.score || 0}
                   <span class="game-status">(${status})</span>
+                  ${myPlayers.length ? `<span class="fantasy-players">★ ${myPlayers.map(p => escapeHtml(p.name.split(' ').slice(-1)[0])).join(', ')}</span>` : ''}
                 </span>
               `;
 
@@ -129,7 +213,7 @@
           });
         });
 
-        const all = [...priorityGames, ...standardGames];
+        const all = [...(fantasy?.items || []), ...priorityGames, ...standardGames];
         tickerEl.innerHTML = all.length ? all.join(' &nbsp;&nbsp;•&nbsp;&nbsp; ') : 'No live scores available.';
       } catch (e) {
         tickerEl.innerText = 'Unable to load scores.';
