@@ -39,9 +39,8 @@
     }
 
     /* Highlight themes for featured teams */
-    .niners-game { background: rgba(170, 0, 0, 0.6); border: 2px solid #B3995D; border-radius: 6px; margin: 0 8px; }
-    .phillies-game { background: rgba(231, 15, 60, 0.5); border: 2px solid #E70F3C; border-radius: 6px; margin: 0 8px; }
-    .blues-game { background: rgba(0, 47, 108, 0.7); border: 2px solid #FCB514; border-radius: 6px; margin: 0 8px; }
+    /* Colors come from FAVORITE_TEAMS in the script below */
+    .favorite-game { border: 2px solid; border-radius: 6px; margin: 0 8px; }
 
     .team-logo { height: 32px; width: 32px; margin: 0 8px; vertical-align: middle; }
     .league-tag { color: #94a3b8; font-size: 15px; margin-right: 6px; }
@@ -58,6 +57,14 @@
   </div>
 
   <script>
+    // Favorite teams are highlighted and shown first.
+    // league: ESPN league abbreviation (NFL, MLB, NHL); team: ESPN team abbreviation.
+    const FAVORITE_TEAMS = [
+      { league: 'NFL', team: 'SF',  background: 'rgba(170, 0, 0, 0.6)',   border: '#B3995D' },
+      { league: 'MLB', team: 'PHI', background: 'rgba(231, 15, 60, 0.5)', border: '#E70F3C' },
+      { league: 'NHL', team: 'STL', background: 'rgba(0, 47, 108, 0.7)',  border: '#FCB514' }
+    ];
+
     const SCORE_ENDPOINTS = [
       'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
@@ -88,17 +95,14 @@
             const status = event.status?.type?.shortDetail || 'Scheduled';
 
             if (home && away) {
-              const isNiners = (home.team?.abbreviation === 'SF' || away.team?.abbreviation === 'SF') && league === 'NFL';
-              const isPhillies = (home.team?.abbreviation === 'PHI' || away.team?.abbreviation === 'PHI') && league === 'MLB';
-              const isBlues = (home.team?.abbreviation === 'STL' || away.team?.abbreviation === 'STL') && league === 'NHL';
+              const favorite = FAVORITE_TEAMS.find(f =>
+                f.league === league && (home.team?.abbreviation === f.team || away.team?.abbreviation === f.team));
 
-              let cls = '';
-              if (isNiners) cls = 'niners-game';
-              if (isPhillies) cls = 'phillies-game';
-              if (isBlues) cls = 'blues-game';
+              const cls = favorite ? 'favorite-game' : '';
+              const style = favorite ? `style="background: ${favorite.background}; border-color: ${favorite.border};"` : '';
 
               const html = `
-                <span class="ticker-item ${cls}">
+                <span class="ticker-item ${cls}" ${style}>
                   <span class="league-tag">[${league}]</span>
                   ${away.team?.logo ? `<img src="${away.team.logo}" class="team-logo">` : ''}
                   ${away.team.abbreviation} ${away.score || 0}
@@ -109,7 +113,7 @@
                 </span>
               `;
 
-              if (isNiners || isPhillies || isBlues) priorityGames.push(html);
+              if (favorite) priorityGames.push(html);
               else standardGames.push(html);
             }
             // Handle Golf Leaderboards
